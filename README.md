@@ -14,3 +14,19 @@ NewsOn is an application for searching news using flutter technology and newsapi
 - Flutter (application)
 - Http
 - WebView
+
+# Instruction
+
+- If you want to install package:
+
+```
+flutter pub get / flutter build apk
+```
+
+And if you want to clean it:
+
+```
+flutter clean
+```
+
+APK FILE: app-release.apk
