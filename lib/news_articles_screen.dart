@@ -81,12 +81,65 @@ class _NewsArticlesScreenState extends State<NewsArticlesScreen> {
     }
   }
 
+  Future<void> searchNews(String query) async {
+    try {
+      final apiKey = '6ba0cc4f0ff04deab22482f4b0ef3118';
+      final response = await http.get(Uri.parse(
+          'https://newsapi.org/v2/everything?qInTitle=$query&apiKey=$apiKey&language=id'));
+
+      if (response.statusCode == 200) {
+        var jsonResponse = json.decode(response.body);
+        List newArticles = jsonResponse['articles'] ?? [];
+
+        setState(() {
+          articles = newArticles;
+          currentPage = 1;
+        });
+      } else {
+        throw Exception('Failed to search news');
+      }
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Error"),
+            content: Text("Failed to search news: $e"),
+            actions: [
+              TextButton(
+                child: Text("Close"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green[800],
-        title: Text('${widget.category} News'),
+        backgroundColor: Color(0xff3c096c),
+        title: Text('${widget.category}'),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () async {
+              final selectedQuery = await showSearch(
+                context: context,
+                delegate: NewsSearchDelegate(),
+              );
+
+              if (selectedQuery != null) {
+                searchNews(selectedQuery);
+              }
+            },
+          ),
+        ],
       ),
       body: ListView.builder(
         controller: _scrollController,
@@ -119,5 +172,82 @@ class _NewsArticlesScreenState extends State<NewsArticlesScreen> {
         },
       ),
     );
+  }
+}
+
+class NewsSearchDelegate extends SearchDelegate<String> {
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, '');
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    return FutureBuilder<List<String>>(
+      future: _searchNews(query),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else {
+          List<String> titles = snapshot.data ?? [];
+          return ListView.builder(
+            itemCount: titles.length,
+            itemBuilder: (context, index) {
+              return ListTile(
+                title: Text(titles[index]),
+                onTap: () {
+                  close(context, titles[index]);
+                },
+              );
+            },
+          );
+        }
+      },
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    return SizedBox.shrink();
+  }
+
+  Future<List<String>> _searchNews(String query) async {
+    final apiKey = '6ba0cc4f0ff04deab22482f4b0ef3118';
+    final response = await http.get(Uri.parse(
+        'https://newsapi.org/v2/everything?qInTitle=$query&apiKey=$apiKey&language=id'));
+
+    if (response.statusCode == 200) {
+      var jsonResponse = json.decode(response.body);
+      print(jsonResponse);
+      List<String> titles = [];
+      for (var article in jsonResponse['articles']) {
+        String title = article['title'];
+        if (!titles.contains(title)) {
+          titles.add(title);
+        }
+      }
+      return titles;
+    } else {
+      throw Exception('Failed to search news');
+    }
   }
 }

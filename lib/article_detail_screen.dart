@@ -9,8 +9,8 @@ class ArticleDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-          backgroundColor: Colors.green[800], title: Text('Article Detail')),
+      appBar:
+          AppBar(backgroundColor: Color(0xff3c096c), title: Text('Article')),
       body: WebView(
         initialUrl: Uri.encodeFull(articleUrl),
         javascriptMode: JavascriptMode.unrestricted,
